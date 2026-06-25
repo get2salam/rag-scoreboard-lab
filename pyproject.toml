@@ -1,0 +1,14 @@
+[project]
+name = "rag-scoreboard-lab"
+version = "0.1.0"
+description = "Minimal retrieval-evaluation scoreboard for ranking search results with deterministic metrics."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Abdul Salam" }]
+
+[project.scripts]
+rag-scoreboard = "rag_scoreboard.__main__:main"
+
+[tool.setuptools]
+packages = ["rag_scoreboard"]

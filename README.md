@@ -13,6 +13,7 @@ RAG prototypes often show impressive generated answers while hiding whether retr
   - precision@k
   - recall@k
   - mean reciprocal rank (MRR@k)
+  - NDCG@k (Normalized Discounted Cumulative Gain — position-weighted relevance)
   - hit rate@k
 - JSON fixture data for repeatable demos and tests.
 - CLI that prints a Markdown scoreboard suitable for README snippets, pull requests, or experiment notes.
@@ -82,17 +83,18 @@ python -m unittest discover -s tests
 ```text
 # RAG Scoreboard (k=3)
 
-| query | relevant | retrieved@k | hits | precision@k | recall@k | rr@k |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| q1 | 2 | 3 | 2 | 0.667 | 1.000 | 0.500 |
-| q2 | 1 | 3 | 0 | 0.000 | 0.000 | 0.000 |
-| q3 | 2 | 3 | 2 | 0.667 | 1.000 | 1.000 |
+| query | relevant | retrieved@k | hits | precision@k | recall@k | rr@k | ndcg@k |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| q1 | 2 | 3 | 2 | 0.667 | 1.000 | 0.500 | 0.693 |
+| q2 | 1 | 3 | 0 | 0.000 | 0.000 | 0.000 | 0.000 |
+| q3 | 2 | 3 | 2 | 0.667 | 1.000 | 1.000 | 1.000 |
 
 ## Macro averages
 - queries: 3
 - precision@3: 0.444
 - recall@3: 0.667
 - mrr@3: 0.500
+- ndcg@3: 0.564
 - hit_rate@3: 0.667
 ```
 

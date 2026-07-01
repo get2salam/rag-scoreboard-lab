@@ -45,13 +45,13 @@ def render_markdown_table(result: EvaluationResult) -> str:
     lines = [
         f"# RAG Scoreboard (k={result.cutoff})",
         "",
-        "| query | relevant | retrieved@k | hits | precision@k | recall@k | rr@k |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| query | relevant | retrieved@k | hits | precision@k | recall@k | rr@k | ndcg@k |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for score in result.queries:
         lines.append(
             "| {query} | {relevant} | {retrieved} | {hits} | {precision:.3f} | "
-            "{recall:.3f} | {rr:.3f} |".format(
+            "{recall:.3f} | {rr:.3f} | {ndcg:.3f} |".format(
                 query=score.query_id,
                 relevant=score.relevant_total,
                 retrieved=score.retrieved,
@@ -59,6 +59,7 @@ def render_markdown_table(result: EvaluationResult) -> str:
                 precision=score.precision,
                 recall=score.recall,
                 rr=score.reciprocal_rank,
+                ndcg=score.ndcg,
             )
         )
     lines.extend(
@@ -69,6 +70,7 @@ def render_markdown_table(result: EvaluationResult) -> str:
             f"- precision@{result.cutoff}: {result.mean_precision:.3f}",
             f"- recall@{result.cutoff}: {result.mean_recall:.3f}",
             f"- mrr@{result.cutoff}: {result.mean_reciprocal_rank:.3f}",
+            f"- ndcg@{result.cutoff}: {result.mean_ndcg:.3f}",
             f"- hit_rate@{result.cutoff}: {result.hit_rate:.3f}",
         ]
     )

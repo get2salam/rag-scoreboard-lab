@@ -6,6 +6,7 @@ local notebooks, and lightweight interview demos.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Mapping, Sequence
 
@@ -25,6 +26,8 @@ class QueryScore:
     precision: float
     recall: float
     reciprocal_rank: float
+
+    ndcg: float
 
     @property
     def hit(self) -> float:
@@ -60,6 +63,10 @@ class EvaluationResult:
     def hit_rate(self) -> float:
         return _mean(score.hit for score in self.queries)
 
+    @property
+    def mean_ndcg(self) -> float:
+        return _mean(score.ndcg for score in self.queries)
+
 
 def precision_at_k(relevant: set[str], retrieved: Sequence[str], k: int) -> float:
     """Compute precision@k for one ranked list."""
@@ -93,6 +100,27 @@ def reciprocal_rank_at_k(relevant: set[str], retrieved: Sequence[str], k: int) -
     return 0.0
 
 
+def ndcg_at_k(relevant: set[str], retrieved: Sequence[str], k: int) -> float:
+    """Compute NDCG@k using binary relevance (1 if relevant, 0 otherwise).
+
+    DCG is normalised by the ideal DCG achievable given the number of relevant
+    documents, so the score is always in [0.0, 1.0].
+    """
+
+    if k <= 0:
+        raise ValueError("k must be positive")
+    ideal_hits = min(len(relevant), k)
+    if ideal_hits == 0:
+        return 0.0
+    dcg = sum(
+        1.0 / math.log2(rank + 1)
+        for rank, doc_id in enumerate(list(retrieved[:k]), start=1)
+        if doc_id in relevant
+    )
+    idcg = sum(1.0 / math.log2(rank + 1) for rank in range(1, ideal_hits + 1))
+    return dcg / idcg
+
+
 def evaluate_run(qrels: Qrels, run: Run, k: int) -> EvaluationResult:
     """Evaluate a run against qrels, sorted by query id for stable output.
 
@@ -118,6 +146,7 @@ def evaluate_run(qrels: Qrels, run: Run, k: int) -> EvaluationResult:
                 precision=precision_at_k(relevant, retrieved, k),
                 recall=recall_at_k(relevant, retrieved, k),
                 reciprocal_rank=reciprocal_rank_at_k(relevant, retrieved, k),
+                ndcg=ndcg_at_k(relevant, retrieved, k),
             )
         )
     return EvaluationResult(cutoff=k, queries=tuple(query_scores))

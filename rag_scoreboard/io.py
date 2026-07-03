@@ -52,7 +52,7 @@ def render_markdown_table(result: EvaluationResult) -> str:
         lines.append(
             "| {query} | {relevant} | {retrieved} | {hits} | {precision:.3f} | "
             "{recall:.3f} | {rr:.3f} | {ndcg:.3f} |".format(
-                query=score.query_id,
+                query=_escape_markdown_cell(score.query_id),
                 relevant=score.relevant_total,
                 retrieved=score.retrieved,
                 hits=score.hits,
@@ -75,6 +75,20 @@ def render_markdown_table(result: EvaluationResult) -> str:
         ]
     )
     return "\n".join(lines)
+
+
+def _escape_markdown_cell(value: str) -> str:
+    """Escape a query id for safe embedding in a Markdown table cell.
+
+    Query ids come from user-supplied qrels/run files, not from a trusted
+    schema. Without escaping, a "|" would split into extra table columns and
+    a newline would break out of the row entirely, letting a crafted query id
+    inject arbitrary Markdown/HTML into a report that is meant to be pasted
+    straight into a PR or README.
+    """
+
+    escaped = value.replace("\\", "\\\\").replace("|", "\\|")
+    return escaped.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
 
 
 def _load_json_object(path: Path) -> dict[str, Any]:

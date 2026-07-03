@@ -1,5 +1,6 @@
 import json
 import math
+import re
 import subprocess
 import sys
 import unittest
@@ -7,6 +8,8 @@ from pathlib import Path
 
 from rag_scoreboard.io import load_qrels, load_run, render_markdown_table
 from rag_scoreboard.metrics import (
+    EvaluationResult,
+    QueryScore,
     evaluate_run,
     ndcg_at_k,
     precision_at_k,
@@ -83,6 +86,41 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(first, second)
         self.assertEqual(json.dumps(first), json.dumps(second))
+
+
+class RenderMarkdownSecurityTests(unittest.TestCase):
+    def _single_score_result(self, query_id):
+        score = QueryScore(
+            query_id=query_id,
+            relevant_total=1,
+            retrieved=1,
+            hits=1,
+            precision=1.0,
+            recall=1.0,
+            reciprocal_rank=1.0,
+            ndcg=1.0,
+        )
+        return EvaluationResult(cutoff=1, queries=(score,))
+
+    def test_pipe_in_query_id_does_not_split_table_columns(self):
+        result = self._single_score_result("q1| extra-cell")
+        output = render_markdown_table(result)
+
+        table_row = next(line for line in output.splitlines() if line.startswith("| q1"))
+        self.assertIn("q1\\| extra-cell", table_row)
+        # Only unescaped pipes act as column delimiters; a real 8-column row
+        # has exactly 9 of them regardless of escaped pipes inside a cell.
+        unescaped_pipes = re.findall(r"(?<!\\)\|", table_row)
+        self.assertEqual(len(unescaped_pipes), 9)
+
+    def test_newline_in_query_id_cannot_inject_extra_rows(self):
+        result = self._single_score_result("q1\n| injected | row |")
+        output = render_markdown_table(result)
+        lines = output.splitlines()
+
+        # Title, blank, header, separator, one row, blank, macro header, 6 macro lines.
+        self.assertEqual(len(lines), 13)
+        self.assertFalse(any(line.startswith("| injected") for line in lines))
 
 
 class NdcgTests(unittest.TestCase):
